@@ -52,15 +52,43 @@ jobs:
             sudo chown -R \$USER:\$USER /opt
 
             if [ ! -d /opt/infra/.git ]; then
-              echo "🔄 Клонирование infra..."
+              echo '🔄 Клонирование infra...'
               git clone --branch ${{ github.event.inputs.branch }} https://github.com/${{ github.repository }} /opt/infra
             else
-              echo "🔁 Обновление infra..."
+              echo '🔁 Обновление infra...'
               cd /opt/infra && git pull origin ${{ github.event.inputs.branch }}
             fi
 
-            echo '📥 Обновление образов...'
             cd /opt/infra
+          
+            echo '🔍 Проверка изменений в Portainer конфигурации...'
+            PORTAINER_CHANGED=false
+          
+            # Проверяем изменения в docker-compose.yml для сервиса portainer
+            if git diff HEAD~1 HEAD --name-only | grep -q 'docker-compose.yml'; then
+              if git diff HEAD~1 HEAD docker-compose.yml | grep -A 20 -B 5 'portainer:' | grep -q '^[+-]'; then
+                echo '📝 Обнаружены изменения в конфигурации Portainer'
+                PORTAINER_CHANGED=true
+              fi
+            fi
+          
+            # Проверяем изменения в workflow файле
+            if git diff HEAD~1 HEAD --name-only | grep -q '.github/workflows/infra-setup.yml'; then
+              if git diff HEAD~1 HEAD .github/workflows/infra-setup.yml | grep -q 'PORTAINER'; then
+                echo '📝 Обнаружены изменения в настройках Portainer в workflow'
+                PORTAINER_CHANGED=true
+              fi
+            fi
+          
+            # Очищаем данные только если есть изменения
+            if [ \"\$PORTAINER_CHANGED\" = true ]; then
+              echo '🗑️ Очистка данных Portainer из-за изменений...'
+              sudo rm -rf /opt/data/portainer/*
+            else
+              echo '✅ Изменений в Portainer нет, данные сохраняются'
+            fi
+
+            echo '📥 Обновление образов...'
             sudo PORTAINER_USERNAME=\"${{ secrets.PORTAINER_USERNAME }}\" PORTAINER_PASSWORD_HASH=\"${{ secrets.PORTAINER_PASSWORD_HASH }}\" docker compose pull
 
             echo '🚀 Перезапуск только изменённых сервисов...'
