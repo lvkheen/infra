@@ -23,33 +23,36 @@ jobs:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
       - name: ⚙️ Bootstrap VPS
+        env:
+          PORTAINER_USERNAME: ${{ secrets.PORTAINER_USERNAME }}
+          PORTAINER_PASSWORD_HASH: ${{ secrets.PORTAINER_PASSWORD_HASH }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} <<'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} "
             set -e
 
-            echo "📦 Установка Docker через get.docker.com..."
+            echo '📦 Установка Docker через get.docker.com...'
             curl -fsSL https://get.docker.com | sh
 
-            echo "🔄 Перезапуск Docker-сервиса..."
+            echo '🔄 Перезапуск Docker-сервиса...'
             sudo systemctl restart docker
 
-            echo "🕒 Ожидание запуска Docker..."
+            echo '🕒 Ожидание запуска Docker...'
             for i in {1..10}; do
               if sudo docker info >/dev/null 2>&1; then
-                echo "✅ Docker готов к работе."
+                echo '✅ Docker готов к работе.'
                 break
               fi
-              echo "⏳ Ожидание запуска Docker ($i)..."
+              echo '⏳ Ожидание запуска Docker (\$i)...'
               sleep 2
-              if [ "$i" -eq 10 ]; then
-                echo "❌ Не удалось запустить Docker."
+              if [ \"\$i\" -eq 10 ]; then
+                echo '❌ Не удалось запустить Docker.'
                 exit 1
               fi
             done
 
-            echo "📁 Создание директорий..."
+            echo '📁 Создание директорий...'
             sudo mkdir -p /opt/data/db /opt/data/redis /opt/data/portainer /opt/infra
-            sudo chown -R $USER:$USER /opt
+            sudo chown -R \$USER:\$USER /opt
 
             if [ ! -d /opt/infra/.git ]; then
               echo "🔄 Клонирование infra..."
@@ -59,14 +62,14 @@ jobs:
               cd /opt/infra && git pull origin ${{ github.event.inputs.branch }}
             fi
 
-            echo "📥 Обновление образов..."
+            echo '📥 Обновление образов...'
             cd /opt/infra
-            export PORTAINER_USERNAME='${{ secrets.PORTAINER_USERNAME }}'
-            export PORTAINER_PASSWORD_HASH='${{ secrets.PORTAINER_PASSWORD_HASH }}'
+            export PORTAINER_USERNAME=\"${PORTAINER_USERNAME}\"
+            export PORTAINER_PASSWORD_HASH=\"${PORTAINER_PASSWORD_HASH}\"
             sudo docker compose pull
 
-            echo "🚀 Перезапуск только изменённых сервисов..."
+            echo '🚀 Перезапуск только изменённых сервисов...'
             sudo docker compose up -d --remove-orphans
 
-            echo "✅ Инфраструктура успешно развернута."
-          EOF
+            echo '✅ Инфраструктура успешно развернута.'
+          "

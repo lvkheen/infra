@@ -35,5 +35,5 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/data/portainer:/data
     environment:
-      - PORTAINER_USERNAME=${PORTAINER_USERNAME}
-      - PORTAINER_PASSWORD_HASH=${PORTAINER_PASSWORD_HASH}
+      PORTAINER_USERNAME: ${PORTAINER_USERNAME}
+      PORTAINER_PASSWORD_HASH: ${PORTAINER_PASSWORD_HASH}
