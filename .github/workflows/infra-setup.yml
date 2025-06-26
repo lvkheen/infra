@@ -48,15 +48,15 @@ jobs:
             done
 
             echo "📁 Создание директорий..."
-            sudo mkdir -p /opt/data/db /opt/data/redis /opt/infra
+            sudo mkdir -p /opt/data/db /opt/data/redis /opt/data/portainer /opt/infra
             sudo chown -R $USER:$USER /opt
 
             if [ ! -d /opt/infra/.git ]; then
               echo "🔄 Клонирование infra..."
-              git clone --branch '${{ github.event.inputs.branch }}' https://github.com/${{ github.repository }} /opt/infra
+              git clone --branch ${{ github.event.inputs.branch }} https://github.com/${{ github.repository }} /opt/infra
             else
               echo "🔁 Обновление infra..."
-              cd /opt/infra && git pull origin '${{ github.event.inputs.branch }}'
+              cd /opt/infra && git pull origin ${{ github.event.inputs.branch }}
             fi
 
             echo "📥 Обновление образов..."
