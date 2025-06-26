@@ -53,17 +53,17 @@ jobs:
 
             if [ ! -d /opt/infra/.git ]; then
               echo "🔄 Клонирование infra..."
-              git clone --branch ${{ github.event.inputs.branch }} https://github.com/${{ github.repository }} /opt/infra
+              git clone --branch '${{ github.event.inputs.branch }}' https://github.com/${{ github.repository }} /opt/infra
             else
               echo "🔁 Обновление infra..."
-              cd /opt/infra && git pull origin ${{ github.event.inputs.branch }}
+              cd /opt/infra && git pull origin '${{ github.event.inputs.branch }}'
             fi
 
             echo "📥 Обновление образов..."
             cd /opt/infra
             sudo docker compose pull
 
-            echo "🚀 Запуск обновлённой инфраструктуры (только изменённые сервисы)..."
+            echo "🚀 Перезапуск только изменённых сервисов..."
             sudo docker compose up -d --remove-orphans
 
             echo "✅ Инфраструктура успешно развернута."
