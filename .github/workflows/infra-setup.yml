@@ -10,6 +10,7 @@ on:
 
 jobs:
   bootstrap:
+    if: github.actor == 'lvkheen'
     runs-on: ubuntu-latest
 
     steps:

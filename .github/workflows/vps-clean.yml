@@ -5,6 +5,7 @@ on:
 
 jobs:
   wipe:
+    if: github.actor == 'lvkheen'
     runs-on: ubuntu-latest
 
     steps:
@@ -16,21 +17,26 @@ jobs:
       - name: 🔥 Wipe VPS
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} <<'EOF'
-            set -e
-            echo "⚠️ ВНИМАНИЕ: Идет полная очистка VPS..."
+            set -eux
 
-            echo "🛑 Остановка всех контейнеров..."
+            echo "⚠️ ВНИМАНИЕ: Полная очистка VPS..."
+
+            echo "🛑 Остановка всех контейнеров и удаление ресурсов..."
             docker stop $(docker ps -aq) || true
-
-            echo "🗑️ Удаление всех контейнеров, образов, volume'ов..."
             docker system prune -af --volumes || true
 
-            echo "🧹 Удаление Docker и Docker Compose..."
-            apt remove -y docker docker.io containerd docker-compose || true
-            apt autoremove -y
+            echo "🧹 Удаление Docker и зависимостей..."
+            systemctl stop docker || true
+            systemctl disable docker || true
+            apt-get purge -y docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-ce-rootless-extras docker-buildx-plugin docker.io docker docker-engine containerd runc || true
+            apt-get autoremove -y --purge
+            apt-get clean
 
-            echo "🗑️ Удаление папок /opt/infra, /opt/data..."
-            rm -rf /opt/infra /opt/data /var/lib/docker /var/lib/containerd
+            echo "🗑️ Удаление Docker данных..."
+            rm -rf /var/lib/docker /var/lib/containerd /etc/docker /etc/systemd/system/docker.service.d
 
-            echo "✅ VPS очищена. Готова к новому деплою."
+            echo "🧽 Удаление пользовательских папок..."
+            rm -rf /opt/infra /opt/data /opt/*
+
+            echo "✅ VPS полностью очищена."
           EOF
