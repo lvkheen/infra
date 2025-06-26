@@ -23,9 +23,6 @@ jobs:
           ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
 
       - name: ⚙️ Bootstrap VPS
-        env:
-          PORTAINER_USERNAME: ${{ secrets.PORTAINER_USERNAME }}
-          PORTAINER_PASSWORD_HASH: ${{ secrets.PORTAINER_PASSWORD_HASH }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} "
             set -e
@@ -64,8 +61,8 @@ jobs:
 
             echo '📥 Обновление образов...'
             cd /opt/infra
-            export PORTAINER_USERNAME=\"${PORTAINER_USERNAME}\"
-            export PORTAINER_PASSWORD_HASH=\"${PORTAINER_PASSWORD_HASH}\"
+            export PORTAINER_USERNAME=\"${{ secrets.PORTAINER_USERNAME }}\"
+            export PORTAINER_PASSWORD_HASH=\"${{ secrets.PORTAINER_PASSWORD_HASH }}\"
             sudo docker compose pull
 
             echo '🚀 Перезапуск только изменённых сервисов...'
