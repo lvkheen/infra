@@ -26,22 +26,19 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} <<'EOF'
             set -e
 
-            echo "🔍 Проверка Docker..."
-            if ! command -v docker >/dev/null; then
-              echo "📦 Установка Docker через get.docker.com..."
-              curl -fsSL https://get.docker.com | sh
-            fi
+            echo "📦 Установка Docker через get.docker.com..."
+            curl -fsSL https://get.docker.com | sh
 
             echo "🔄 Перезапуск Docker-сервиса..."
-            systemctl restart docker
+            sudo systemctl restart docker
 
             echo "🕒 Ожидание запуска Docker..."
             for i in {1..10}; do
-              if docker info >/dev/null 2>&1; then
+              if sudo docker info >/dev/null 2>&1; then
                 echo "✅ Docker готов к работе."
                 break
               fi
-              echo "⏳ Ожидание ($i)..."
+              echo "⏳ Ожидание запуска Docker ($i)..."
               sleep 2
               if [ "$i" -eq 10 ]; then
                 echo "❌ Не удалось запустить Docker."
@@ -49,16 +46,9 @@ jobs:
               fi
             done
 
-            echo "🔍 Проверка Docker Compose..."
-            if ! command -v docker-compose >/dev/null; then
-              echo "📦 Установка Docker Compose..."
-              curl -L "https://github.com/docker/compose/releases/download/v2.24.2/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
-              chmod +x /usr/local/bin/docker-compose
-            fi
-
             echo "📁 Создание директорий..."
-            mkdir -p /opt/data/db /opt/data/redis /opt/infra
-            chown -R $USER:$USER /opt
+            sudo mkdir -p /opt/data/db /opt/data/redis /opt/infra
+            sudo chown -R $USER:$USER /opt
 
             if [ ! -d /opt/infra/.git ]; then
               echo "🔄 Клонирование infra..."
@@ -70,7 +60,7 @@ jobs:
 
             echo "🚀 Запуск инфраструктуры..."
             cd /opt/infra
-            docker-compose up -d
+            sudo docker compose up -d
 
             echo "✅ Инфраструктура успешно развернута."
           EOF
