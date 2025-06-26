@@ -1,0 +1,59 @@
+name: VPS full infra setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: false
+        default: 'main'
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout (для доступа к secrets)
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: ⚙️ Bootstrap VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} <<'EOF'
+            set -e
+
+            echo "🔍 Проверка Docker..."
+            if ! command -v docker >/dev/null; then
+              echo "📦 Установка Docker..."
+              apt update && apt install -y docker.io
+            fi
+
+            echo "🔍 Проверка Docker Compose..."
+            if ! command -v docker-compose >/dev/null; then
+              echo "📦 Установка Docker Compose..."
+              curl -L "https://github.com/docker/compose/releases/download/v2.24.2/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
+            fi
+
+            echo "📁 Создание директорий..."
+            mkdir -p /opt/data/db /opt/data/redis /opt/infra
+            chown -R $USER:$USER /opt
+
+            if [ ! -d /opt/infra/.git ]; then
+              echo "🔄 Клонирование infra..."
+              git clone --branch ${{ github.event.inputs.branch }} https://github.com/${{ github.repository }} /opt/infra
+            else
+              echo "🔁 Обновление infra..."
+              cd /opt/infra && git pull origin ${{ github.event.inputs.branch }}
+            fi
+
+            echo "🚀 Запуск инфраструктуры..."
+            cd /opt/infra
+            docker-compose up -d
+
+            echo "✅ Инфраструктура успешно развернута."
+          EOF
