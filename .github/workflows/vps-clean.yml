@@ -1,0 +1,36 @@
+name: Clean VPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  wipe:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔐 Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: 🔥 Wipe VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }} <<'EOF'
+            set -e
+            echo "⚠️ ВНИМАНИЕ: Идет полная очистка VPS..."
+
+            echo "🛑 Остановка всех контейнеров..."
+            docker stop $(docker ps -aq) || true
+
+            echo "🗑️ Удаление всех контейнеров, образов, volume'ов..."
+            docker system prune -af --volumes || true
+
+            echo "🧹 Удаление Docker и Docker Compose..."
+            apt remove -y docker docker.io containerd docker-compose || true
+            apt autoremove -y
+
+            echo "🗑️ Удаление папок /opt/infra, /opt/data..."
+            rm -rf /opt/infra /opt/data /var/lib/docker /var/lib/containerd
+
+            echo "✅ VPS очищена. Готова к новому деплою."
+          EOF
