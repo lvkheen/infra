@@ -61,6 +61,8 @@ jobs:
 
             echo "📥 Обновление образов..."
             cd /opt/infra
+            export PORTAINER_USERNAME='${{ secrets.PORTAINER_USERNAME }}'
+            export PORTAINER_PASSWORD_HASH='${{ secrets.PORTAINER_PASSWORD_HASH }}'
             sudo docker compose pull
 
             echo "🚀 Перезапуск только изменённых сервисов..."
