@@ -1,4 +1,4 @@
-name: VPS full infra setup
+name: Bootstrap VPS (Full Setup)
 
 on:
   workflow_dispatch:
