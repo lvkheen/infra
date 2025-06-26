@@ -1,4 +1,4 @@
-name: Bootstrap VPS (Full Setup)
+name: Infra setup
 
 on:
   workflow_dispatch:
@@ -59,9 +59,12 @@ jobs:
               cd /opt/infra && git pull origin ${{ github.event.inputs.branch }}
             fi
 
-            echo "🚀 Запуск инфраструктуры..."
+            echo "📥 Обновление образов..."
             cd /opt/infra
-            sudo docker compose up -d
+            sudo docker compose pull
+
+            echo "🚀 Запуск обновлённой инфраструктуры (только изменённые сервисы)..."
+            sudo docker compose up -d --remove-orphans
 
             echo "✅ Инфраструктура успешно развернута."
           EOF
