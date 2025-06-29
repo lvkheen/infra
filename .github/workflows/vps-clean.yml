@@ -25,9 +25,6 @@ jobs:
             docker stop $(docker ps -aq) || true
             docker system prune -af --volumes || true
 
-            echo "🧹 Удаление Portainer данных..."
-            rm -rf /opt/data/portainer || true
-
             echo "🧹 Удаление Docker и зависимостей..."
             systemctl stop docker || true
             systemctl disable docker || true
